@@ -74,9 +74,17 @@
   #categorySelect {
     display: block;
     margin: 0 auto 20px auto;
-    max-width: 300px;
+    max-width: 320px;
     font-size: 1rem;
     padding: 6px;
+  }
+  #languageFilter label {
+    margin-right: 12px;
+    user-select: none;
+  }
+  /* pro lepší skrytí sloupců - necháme je, ale display:none */
+  th.hidden, td.hidden {
+    display: none;
   }
 </style>
 </head>
@@ -85,17 +93,17 @@
 <h1 style="text-align:center;">Mega Jazykovka – Vícejazyčný slovník</h1>
 <button id="themeToggle">Přepnout tmavý/světlý režim</button>
 
-<label for="categorySelect" style="display:block; max-width:300px; margin: 20px auto 10px auto; font-weight:bold;">
+<label for="categorySelect" style="display:block; max-width:320px; margin: 20px auto 10px auto; font-weight:bold;">
   Vyber lekci / kategorii:
 </label>
 <select id="categorySelect" aria-label="Výběr kategorie slovíček"></select>
 
-<label for="languageFilter" style="display:block; max-width:1200px; margin:0 auto 10px auto; font-weight:bold;">
+<label for="languageFilter" style="display:block; max-width:1200px; margin:auto 0 10px 0; font-weight:bold;">
   Filtrovat dle jazyka (zaškrtni, co chceš vidět):
 </label>
-<div id="languageFilter" style="max-width:1200px; margin:auto 0 20px;">
+<div id="languageFilter" style="max-width:1200px; margin:auto 0 20px 0;">
   <label><input type="checkbox" data-lang="cs" checked> Čeština</label>
-  <label><input type="checkbox" data-lang="zh_simp" checked> Čínština (zjednodušená)</label>
+  <label><input type="checkbox" data-lang="zh_simp" checked> Čínština (zjedn.)</label>
   <label><input type="checkbox" data-lang="zh_pinyin" checked> Čínština (Pinyin)</label>
   <label><input type="checkbox" data-lang="zh_cantonese" checked> Kantonština</label>
   <label><input type="checkbox" data-lang="sr_cyr" checked> Srbština (azbuka)</label>
@@ -103,6 +111,9 @@
   <label><input type="checkbox" data-lang="hu" checked> Maďarština</label>
   <label><input type="checkbox" data-lang="es" checked> Španělština</label>
   <label><input type="checkbox" data-lang="la" checked> Latina</label>
+  <label><input type="checkbox" data-lang="de" checked> Němčina</label>
+  <label><input type="checkbox" data-lang="fr" checked> Francouzština</label>
+  <label><input type="checkbox" data-lang="ru" checked> Ruština</label>
 </div>
 
 <table id="dictTable" aria-label="Vícejazyčný jazykový slovník">
@@ -118,85 +129,318 @@
       <th data-lang="hu">Maďarština</th>
       <th data-lang="es">Španělština</th>
       <th data-lang="la">Latina</th>
+      <th data-lang="de">Němčina</th>
+      <th data-lang="fr">Francouzština</th>
+      <th data-lang="ru">Ruština</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
-<script src="translations.js"></script>
 <script>
-  const tbody = document.querySelector('#dictTable tbody');
-  const themeToggle = document.getElementById('themeToggle');
-  const checkboxes = document.querySelectorAll('#languageFilter input[type="checkbox"]');
-  const headers = document.querySelectorAll('th[data-lang]');
-  const categorySelect = document.getElementById('categorySelect');
-
-  // Naplnit výběr kategorií
-  Object.keys(categories).forEach(cat => {
-    const opt = document.createElement('option');
-    opt.value = cat;
-    opt.textContent = categories[cat].name + ` (${categories[cat].words.length} slov)`;
-    categorySelect.appendChild(opt);
-  });
-
-  // Funkce na vykreslení slov podle vybrané kategorie
-  function renderTable(category) {
-    tbody.innerHTML = '';
-    const words = categories[category]?.words || [];
-    words.forEach(entry => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="cs">${entry.cs || ''}</td>
-        <td class="zh_simp">${entry.zh_simp || ''}</td>
-        <td class="zh_pinyin">${entry.zh_pinyin || ''}</td>
-        <td class="zh_cantonese">${entry.zh_cantonese || ''}</td>
-        <td class="sr_cyr">${entry.sr_cyr || ''}</td>
-        <td class="sr_lat">${entry.sr_lat || ''}</td>
-        <td class="hu">${entry.hu || ''}</td>
-        <td class="es">${entry.es || ''}</td>
-        <td class="la">${entry.la || ''}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-    updateVisibility();
+// ======= TRANSLATIONS DATA =======
+const categories = {
+  "jidlo": {
+    name: "Jídlo",
+    words: [
+      { cs:"Jídlo", zh_simp:"食物", zh_pinyin:"shí wù", zh_cantonese:"sik6 mat6",
+        sr_cyr:"Храна", sr_lat:"Hrana",
+        hu:"Étel", es:"Comida", la:"Cibus",
+        de:"Essen", fr:"Nourriture", ru:"Еда"
+      },
+      { cs:"Voda", zh_simp:"水", zh_pinyin:"shuǐ", zh_cantonese:"seoi2",
+        sr_cyr:"Вода", sr_lat:"Voda",
+        hu:"Víz", es:"Agua", la:"Aqua",
+        de:"Wasser", fr:"Eau", ru:"Вода"
+      },
+      { cs:"Chléb", zh_simp:"面包", zh_pinyin:"miànbāo", zh_cantonese:"min6 baau1",
+        sr_cyr:"Хлеб", sr_lat:"Hleb",
+        hu:"Kenyér", es:"Pan", la:"Panis",
+        de:"Brot", fr:"Pain", ru:"Хлеб"
+      },
+      { cs:"Maso", zh_simp:"肉", zh_pinyin:"ròu", zh_cantonese:"juk6",
+        sr_cyr:"Месо", sr_lat:"Meso",
+        hu:"Hús", es:"Carne", la:"Carne",
+        de:"Fleisch", fr:"Viande", ru:"Мясо"
+      },
+      { cs:"Ovoce", zh_simp:"水果", zh_pinyin:"shuǐguǒ", zh_cantonese:"seoi2 gwo2",
+        sr_cyr:"Воће", sr_lat:"Voće",
+        hu:"Gyümölcs", es:"Fruta", la:"Fructus",
+        de:"Obst", fr:"Fruit", ru:"Фрукты"
+      },
+      { cs:"Zelenina", zh_simp:"蔬菜", zh_pinyin:"shūcài", zh_cantonese:"so1 coi3",
+        sr_cyr:"Поврће", sr_lat:"Povrće",
+        hu:"Zöldség", es:"Verdura", la:"Holus",
+        de:"Gemüse", fr:"Légumes", ru:"Овощи"
+      },
+      { cs:"Sýr", zh_simp:"奶酪", zh_pinyin:"nǎilào", zh_cantonese:"naai5 lok6",
+        sr_cyr:"Сир", sr_lat:"Sir",
+        hu:"Sajt", es:"Queso", la:"Caseus",
+        de:"Käse", fr:"Fromage", ru:"Сыр"
+      },
+      { cs:"Máslo", zh_simp:"黄油", zh_pinyin:"huángyóu", zh_cantonese:"wong4 jau4",
+        sr_cyr:"Маслац", sr_lat:"Maslac",
+        hu:"Vaj", es:"Mantequilla", la:"Butyrum",
+        de:"Butter", fr:"Beurre", ru:"Масло"
+      },
+      { cs:"Jablko", zh_simp:"苹果", zh_pinyin:"píngguǒ", zh_cantonese:"ping4 gwo2",
+        sr_cyr:"Јабука", sr_lat:"Jabuka",
+        hu:"Alma", es:"Manzana", la:"Malum",
+        de:"Apfel", fr:"Pomme", ru:"Яблоко"
+      },
+      { cs:"Banán", zh_simp:"香蕉", zh_pinyin:"xiāngjiāo", zh_cantonese:"hoeng1 ziu1",
+        sr_cyr:"Банана", sr_lat:"Banana",
+        hu:"Banán", es:"Plátano", la:"Banana",
+        de:"Banane", fr:"Banane", ru:"Банан"
+      },
+      { cs:"Vejce", zh_simp:"鸡蛋", zh_pinyin:"jīdàn", zh_cantonese:"gai1 daan6",
+        sr_cyr:"Јаје", sr_lat:"Jaje",
+        hu:"Tojás", es:"Huevo", la:"Ovum",
+        de:"Ei", fr:"Œuf", ru:"Яйцо"
+      },
+      { cs:"Čaj", zh_simp:"茶", zh_pinyin:"chá", zh_cantonese:"caa4",
+        sr_cyr:"Чај", sr_lat:"Čaj",
+        hu:"Tea", es:"Té", la:"Thea",
+        de:"Tee", fr:"Thé", ru:"Чай"
+      },
+      { cs:"Káva", zh_simp:"咖啡", zh_pinyin:"kāfēi", zh_cantonese:"gaa3 fe1",
+        sr_cyr:"Кафе", sr_lat:"Kafe",
+        hu:"Kávé", es:"Café", la:"Coffea",
+        de:"Kaffee", fr:"Café", ru:"Кофе"
+      },
+      // více klidně přidávej do jidlo
+    ]
+  },
+  "zvire": {
+    name: "Zvířata",
+    words: [
+      { cs:"Pes", zh_simp:"狗", zh_pinyin:"gǒu", zh_cantonese:"gau2",
+        sr_cyr:"Пас", sr_lat:"Pas",
+        hu:"Kutya", es:"Perro", la:"Canis",
+        de:"Hund", fr:"Chien", ru:"Собака"
+      },
+      { cs:"Kočka", zh_simp:"猫", zh_pinyin:"māo", zh_cantonese:"maau1",
+        sr_cyr:"Мачка", sr_lat:"Mačka",
+        hu:"Macska", es:"Gato", la:"Feles",
+        de:"Katze", fr:"Chat", ru:"Кошка"
+      },
+      { cs:"Pták", zh_simp:"鸟", zh_pinyin:"niǎo", zh_cantonese:"niu5",
+        sr_cyr:"Птица", sr_lat:"Ptica",
+        hu:"Madár", es:"Pájaro", la:"Avis",
+        de:"Vogel", fr:"Oiseau", ru:"Птица"
+      },
+      { cs:"Ryba", zh_simp:"鱼", zh_pinyin:"yú", zh_cantonese:"jyu4",
+        sr_cyr:"Риба", sr_lat:"Riba",
+        hu:"Hal", es:"Pez", la:"Piscis",
+        de:"Fisch", fr:"Poisson", ru:"Рыба"
+      },
+      { cs:"Kůň", zh_simp:"马", zh_pinyin:"mǎ", zh_cantonese:"maa5",
+        sr_cyr:"Коњ", sr_lat:"Konj",
+        hu:"Ló", es:"Caballo", la:"Equus",
+        de:"Pferd", fr:"Cheval", ru:"Лошадь"
+      },
+      { cs:"Kráva", zh_simp:"牛", zh_pinyin:"niú", zh_cantonese:"ngau4",
+        sr_cyr:"Крава", sr_lat:"Krava",
+        hu:"Tehén", es:"Vaca", la:"Vacca",
+        de:"Kuh", fr:"Vache", ru:"Корова"
+      },
+      { cs:"Prase", zh_simp:"猪", zh_pinyin:"zhū", zh_cantonese:"zyu1",
+        sr_cyr:"Свинја", sr_lat:"Svinja",
+        hu:"Disznó", es:"Cerdo", la:"Porcus",
+        de:"Schwein", fr:"Cochon", ru:"Свинья"
+      },
+      { cs:"Ovce", zh_simp:"羊", zh_pinyin:"yáng", zh_cantonese:"joeng4",
+        sr_cyr:"Овца", sr_lat:"Ovca",
+        hu:"Juh", es:"Oveja", la:"Ovis",
+        de:"Schaf", fr:"Mouton", ru:"Овца"
+      },
+      // klidně přidávej víc do zvířata
+    ]
+  },
+  "doprava": {
+    name: "Doprava",
+    words: [
+      { cs:"Auto", zh_simp:"汽车", zh_pinyin:"qìchē", zh_cantonese:"hei3 ce1",
+        sr_cyr:"Ауто", sr_lat:"Auto",
+        hu:"Autó", es:"Coche", la:"Currus",
+        de:"Auto", fr:"Voiture", ru:"Машина"
+      },
+      { cs:"Kolo", zh_simp:"自行车", zh_pinyin:"zìxíngchē", zh_cantonese:"zi6 hang4 ce1",
+        sr_cyr:"Бицикл", sr_lat:"Bicikl",
+        hu:"Kerékpár", es:"Bicicleta", la:"Birota",
+        de:"Fahrrad", fr:"Vélo", ru:"Велосипед"
+      },
+      { cs:"Letadlo", zh_simp:"飞机", zh_pinyin:"fēijī", zh_cantonese:"fei1 gei1",
+        sr_cyr:"Авион", sr_lat:"Avion",
+        hu:"Repülőgép", es:"Avión", la:"Aeroplanum",
+        de:"Flugzeug", fr:"Avion", ru:"Самолёт"
+      },
+      { cs:"Vlak", zh_simp:"火车", zh_pinyin:"huǒchē", zh_cantonese:"fo2 ce1",
+        sr_cyr:"Воз", sr_lat:"Voz",
+        hu:"Vonat", es:"Tren", la:"Tramen",
+        de:"Zug", fr:"Train", ru:"Поезд"
+      },
+      { cs:"Loď", zh_simp:"船", zh_pinyin:"chuán", zh_cantonese:"syun4",
+        sr_cyr:"Брод", sr_lat:"Brod",
+        hu:"Hajó", es:"Barco", la:"Navis",
+        de:"Schiff", fr:"Bateau", ru:"Корабль"
+      },
+      // další si přidej sám, nebo kdy chceš můžu dodělat
+    ]
+  },
+  "zdravi": {
+    name: "Zdraví a tělo",
+    words: [
+      { cs:"Hlava", zh_simp:"头", zh_pinyin:"tóu", zh_cantonese:"tau4",
+        sr_cyr:"Глава", sr_lat:"Glava",
+        hu:"Fej", es:"Cabeza", la:"Caput",
+        de:"Kopf", fr:"Tête", ru:"Голова"
+      },
+      { cs:"Ruka", zh_simp:"手", zh_pinyin:"shǒu", zh_cantonese:"sau2",
+        sr_cyr:"Рука", sr_lat:"Ruka",
+        hu:"Kéz", es:"Mano", la:"Manus",
+        de:"Hand", fr:"Main", ru:"Рука"
+      },
+      { cs:"Noha", zh_simp:"脚", zh_pinyin:"jiǎo", zh_cantonese:"goek3",
+        sr_cyr:"Нога", sr_lat:"Noga",
+        hu:"Láb", es:"Pierna", la:"Crus",
+        de:"Bein", fr:"Jambe", ru:"Нога"
+      },
+      { cs:"Oko", zh_simp:"眼睛", zh_pinyin:"yǎnjīng", zh_cantonese:"ngaan5 zing1",
+        sr_cyr:"Око", sr_lat:"Oko",
+        hu:"Szem", es:"Ojo", la:"Oculus",
+        de:"Auge", fr:"Œil", ru:"Глаз"
+      },
+      { cs:"Ucho", zh_simp:"耳朵", zh_pinyin:"ěrduo", zh_cantonese:"ji5 do2",
+        sr_cyr:"Уво", sr_lat:"Uvo",
+        hu:"Fül", es:"Oreja", la:"Auris",
+        de:"Ohr", fr:"Oreille", ru:"Ухо"
+      },
+      // přidej víc podle potřeby
+    ]
+  },
+  "cas": {
+    name: "Čas a dny",
+    words: [
+      { cs:"Dnes", zh_simp:"今天", zh_pinyin:"jīntiān", zh_cantonese:"gam1 tin1",
+        sr_cyr:"Данас", sr_lat:"Danas",
+        hu:"Ma", es:"Hoy", la:"Hodie",
+        de:"Heute", fr:"Aujourd'hui", ru:"Сегодня"
+      },
+      { cs:"Zítra", zh_simp:"明天", zh_pinyin:"míngtiān", zh_cantonese:"ming4 tin1",
+        sr_cyr:"Сутра", sr_lat:"Sutra",
+        hu:"Holnap", es:"Mañana", la:"Cras",
+        de:"Morgen", fr:"Demain", ru:"Завтра"
+      },
+      { cs:"Včera", zh_simp:"昨天", zh_pinyin:"zuótiān", zh_cantonese:"zo2 tin1",
+        sr_cyr:"Јуче", sr_lat:"Jučе",
+        hu:"Tegnap", es:"Ayer", la:"Heri",
+        de:"Gestern", fr:"Hier", ru:"Вчера"
+      },
+      { cs:"Ráno", zh_simp:"早上", zh_pinyin:"zǎoshang", zh_cantonese:"zou2 soeng6",
+        sr_cyr:"Јутро", sr_lat:"Jutro",
+        hu:"Reggel", es:"Mañana", la:"Mane",
+        de:"Morgen", fr:"Matin", ru:"Утро"
+      },
+      { cs:"Večer", zh_simp:"晚上", zh_pinyin:"wǎnshang", zh_cantonese:"maan5 soeng6",
+        sr_cyr:"Вече", sr_lat:"Veče",
+        hu:"Este", es:"Tarde", la:"Vesper",
+        de:"Abend", fr:"Soir", ru:"Вечер"
+      },
+      // další si přidej
+    ]
   }
+};
 
-  // Funkce na update viditelnosti sloupců dle checkboxů
-  function updateVisibility() {
-    const enabledLangs = Array.from(checkboxes)
-      .filter(cb => cb.checked)
-      .map(cb => cb.getAttribute('data-lang'));
+// ======= APP LOGIC =======
+const tableBody = document.querySelector('#dictTable tbody');
+const categorySelect = document.getElementById('categorySelect');
+const languageFilter = document.getElementById('languageFilter');
+const themeToggle = document.getElementById('themeToggle');
+const thead = document.querySelector('#dictTable thead tr');
 
-    // Hlavičky
-    headers.forEach(th => {
-      const lang = th.getAttribute('data-lang');
-      th.style.display = enabledLangs.includes(lang) ? '' : 'none';
+function renderTable() {
+  const selectedCategory = categorySelect.value;
+  const checkedCheckboxes = [...languageFilter.querySelectorAll('input[type=checkbox]')];
+  const langsChecked = checkedCheckboxes.filter(cb => cb.checked).map(cb => cb.dataset.lang);
+
+  // Skryj/ukaz hlavičku sloupců podle checked
+  [...thead.children].forEach(th => {
+    const lang = th.dataset.lang;
+    if(langsChecked.includes(lang)) {
+      th.classList.remove('hidden');
+      th.style.display = '';
+    } else {
+      th.classList.add('hidden');
+      th.style.display = 'none';
+    }
+  });
+
+  tableBody.innerHTML = '';
+
+  if(!categories[selectedCategory]) return;
+
+  const words = categories[selectedCategory].words;
+
+  words.forEach(word => {
+    const tr = document.createElement('tr');
+    langsChecked.forEach(lang => {
+      const td = document.createElement('td');
+      td.textContent = word[lang] || '';
+      td.classList.remove('hidden');
+      td.style.display = '';
+      tr.appendChild(td);
     });
+    // Skryj sloupce, které nejsou vybrané (tady už nejsou v DOM)
+    tableBody.appendChild(tr);
+  });
+}
 
-    // Buňky
-    const rows = tbody.querySelectorAll('tr');
-    rows.forEach(row => {
-      Array.from(row.children).forEach(td => {
-        td.style.display = enabledLangs.includes(td.className) ? '' : 'none';
-      });
-    });
+function populateCategories() {
+  categorySelect.innerHTML = '';
+  Object.keys(categories).forEach(catKey => {
+    const option = document.createElement('option');
+    option.value = catKey;
+    option.textContent = categories[catKey].name;
+    categorySelect.appendChild(option);
+  });
+}
+
+function loadSettings() {
+  const savedCategory = localStorage.getItem('lastCategory');
+  const savedTheme = localStorage.getItem('theme');
+
+  if(savedCategory && categories[savedCategory]) {
+    categorySelect.value = savedCategory;
+  } else {
+    categorySelect.selectedIndex = 0;
   }
+  if(savedTheme === 'dark') {
+    document.body.classList.add('dark');
+  }
+}
 
-  themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark');
-  });
+function saveSettings() {
+  localStorage.setItem('lastCategory', categorySelect.value);
+  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+}
 
-  checkboxes.forEach(cb => {
-    cb.addEventListener('change', updateVisibility);
-  });
+categorySelect.addEventListener('change', () => {
+  renderTable();
+  saveSettings();
+});
+languageFilter.addEventListener('change', () => {
+  renderTable();
+});
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  saveSettings();
+});
 
-  categorySelect.addEventListener('change', e => {
-    renderTable(e.target.value);
-  });
-
-  // Výchozí načtení první kategorie
-  categorySelect.selectedIndex = 0;
-  renderTable(categorySelect.value);
+// Start app
+populateCategories();
+loadSettings();
+renderTable();
 </script>
 
 </body>
