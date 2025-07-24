@@ -86,11 +86,22 @@
   th.hidden, td.hidden {
     display: none;
   }
+  #streakCounter {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #1976d2;
+  }
+  body.dark #streakCounter {
+    color: #7ab2f7;
+  }
 </style>
 </head>
 <body>
 
 <h1 style="text-align:center;">Mega Jazykovka – Vícejazyčný slovník</h1>
+<div id="streakCounter">Počet dní v řadě: <span>0</span></div>
 <button id="themeToggle">Přepnout tmavý/světlý režim</button>
 
 <label for="categorySelect" style="display:block; max-width:320px; margin: 20px auto 10px auto; font-weight:bold;">
@@ -104,8 +115,8 @@
 <div id="languageFilter" style="max-width:1200px; margin:auto 0 20px 0;">
   <label><input type="checkbox" data-lang="cs" checked> Čeština</label>
   <label><input type="checkbox" data-lang="en" checked> Angličtina</label>
-  <label><input type="checkbox" data-lang="zh_simp" checked>  Čínština (zjedn.)</label>
-  <label><input type="checkbox" data-lang="zh_pinyin" checked> Čínština (Pinyin)</label>
+  <label><input type="checkbox" data-lang="zh_simp" checked> Čínština (zjedn.)</label>
+  <label><input type="checkbox" data-lang="zh_pinyin" checked> Pinyin</label>
   <label><input type="checkbox" data-lang="zh_cantonese" checked> Kantonština</label>
   <label><input type="checkbox" data-lang="sr_cyr" checked> Srbština (azbuka)</label>
   <label><input type="checkbox" data-lang="sr_lat" checked> Srbština (latinka)</label>
@@ -124,7 +135,7 @@
       <th data-lang="cs">Česky</th>
       <th data-lang="en">Anglicky</th>
       <th data-lang="zh_simp">Čínština (zjedn.)</th>
-      <th data-lang="zh_pinyin">Čínština (Pinyin)</th>
+      <th data-lang="zh_pinyin">Pinyin</th>
       <th data-lang="zh_cantonese">Kantonština</th>
       <th data-lang="sr_cyr">Srbština (azbuka)</th>
       <th data-lang="sr_lat">Srbština (latinka)</th>
@@ -178,7 +189,7 @@ const categories = {
       { cs:"Sýr", en:"Cheese", zh_simp:"奶酪", zh_pinyin:"nǎilào", zh_cantonese:"naai5 lok6",
         sr_cyr:"Сир", sr_lat:"Sir",
         hu:"Sajt", es:"Queso", la:"Caseus",
-        de:"Käse", fr:"Fromage", ru:"Сыр"
+        de:"Käse", fr:"Beurre", ru:"Сыр"
       },
       { cs:"Máslo", en:"Butter", zh_simp:"黄油", zh_pinyin:"huángyóu", zh_cantonese:"wong4 jau4",
         sr_cyr:"Маслац", sr_lat:"Maslac",
@@ -355,6 +366,7 @@ const categorySelect = document.getElementById('categorySelect');
 const languageFilter = document.getElementById('languageFilter');
 const themeToggle = document.getElementById('themeToggle');
 const thead = document.querySelector('#dictTable thead tr');
+const streakCounterSpan = document.querySelector('#streakCounter span');
 
 function renderTable() {
   const selectedCategory = categorySelect.value;
@@ -421,6 +433,36 @@ function saveSettings() {
   localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
 }
 
+function updateStreak() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+  let lastVisit = localStorage.getItem('lastVisit');
+  let streak = parseInt(localStorage.getItem('streak') || '0');
+
+  if (lastVisit) {
+    const lastVisitDate = new Date(lastVisit);
+    lastVisitDate.setHours(0, 0, 0, 0);
+
+    const diffTime = Math.abs(today.getTime() - lastVisitDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) { // Visited yesterday
+      streak++;
+    } else if (diffDays > 1) { // Missed a day
+      streak = 1;
+    }
+    // If diffDays is 0, it means the user is visiting on the same day, streak doesn't change
+  } else {
+    // First visit, start streak at 1
+    streak = 1;
+  }
+
+  localStorage.setItem('lastVisit', today.toISOString());
+  localStorage.setItem('streak', streak.toString());
+  streakCounterSpan.textContent = streak;
+}
+
 categorySelect.addEventListener('change', () => {
   renderTable();
   saveSettings();
@@ -437,6 +479,7 @@ themeToggle.addEventListener('click', () => {
 populateCategories();
 loadSettings();
 renderTable();
+updateStreak();
 </script>
 
 </body>
