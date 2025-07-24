@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mega Jazykovka – Vícejazyčný slovník</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f9f9f9;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  body.dark {
+    background: #121212;
+    color: #eee;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1200px;
+    margin: auto;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  body.dark table {
+    background: #222;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    font-size: 0.9rem;
+    vertical-align: top;
+  }
+  body.dark th, body.dark td {
+    border-color: #444;
+  }
+  th {
+    background-color: #1976d2;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  tr:nth-child(even) {background-color: #f2f2f2;}
+  body.dark tr:nth-child(even) {background-color: #333;}
+  caption {
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1.3rem;
+  }
+  @media (max-width: 900px) {
+    td {
+      font-size: 0.75rem;
+    }
+  }
+  #themeToggle {
+    display: block;
+    margin: 0 auto 20px auto;
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    user-select: none;
+  }
+  #languageFilter {
+    display: block;
+    margin: 0 auto 20px auto;
+    max-width: 1200px;
+  }
+  #categorySelect {
+    display: block;
+    margin: 0 auto 20px auto;
+    max-width: 300px;
+    font-size: 1rem;
+    padding: 6px;
+  }
+</style>
+</head>
+<body>
+
+<h1 style="text-align:center;">Mega Jazykovka – Vícejazyčný slovník</h1>
+<button id="themeToggle">Přepnout tmavý/světlý režim</button>
+
+<label for="categorySelect" style="display:block; max-width:300px; margin: 20px auto 10px auto; font-weight:bold;">
+  Vyber lekci / kategorii:
+</label>
+<select id="categorySelect" aria-label="Výběr kategorie slovíček"></select>
+
+<label for="languageFilter" style="display:block; max-width:1200px; margin:0 auto 10px auto; font-weight:bold;">
+  Filtrovat dle jazyka (zaškrtni, co chceš vidět):
+</label>
+<div id="languageFilter" style="max-width:1200px; margin:auto 0 20px;">
+  <label><input type="checkbox" data-lang="cs" checked> Čeština</label>
+  <label><input type="checkbox" data-lang="zh_simp" checked> Čínština (zjednodušená)</label>
+  <label><input type="checkbox" data-lang="zh_pinyin" checked> Čínština (Pinyin)</label>
+  <label><input type="checkbox" data-lang="zh_cantonese" checked> Kantonština</label>
+  <label><input type="checkbox" data-lang="sr_cyr" checked> Srbština (azbuka)</label>
+  <label><input type="checkbox" data-lang="sr_lat" checked> Srbština (latinka)</label>
+  <label><input type="checkbox" data-lang="hu" checked> Maďarština</label>
+  <label><input type="checkbox" data-lang="es" checked> Španělština</label>
+  <label><input type="checkbox" data-lang="la" checked> Latina</label>
+</div>
+
+<table id="dictTable" aria-label="Vícejazyčný jazykový slovník">
+  <caption>Slova a fráze v několika jazycích</caption>
+  <thead>
+    <tr>
+      <th data-lang="cs">Česky</th>
+      <th data-lang="zh_simp">Čínština (zjedn.)</th>
+      <th data-lang="zh_pinyin">Čínština (Pinyin)</th>
+      <th data-lang="zh_cantonese">Kantonština</th>
+      <th data-lang="sr_cyr">Srbština (azbuka)</th>
+      <th data-lang="sr_lat">Srbština (latinka)</th>
+      <th data-lang="hu">Maďarština</th>
+      <th data-lang="es">Španělština</th>
+      <th data-lang="la">Latina</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script src="translations.js"></script>
+<script>
+  const tbody = document.querySelector('#dictTable tbody');
+  const themeToggle = document.getElementById('themeToggle');
+  const checkboxes = document.querySelectorAll('#languageFilter input[type="checkbox"]');
+  const headers = document.querySelectorAll('th[data-lang]');
+  const categorySelect = document.getElementById('categorySelect');
+
+  // Naplnit výběr kategorií
+  Object.keys(categories).forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = categories[cat].name + ` (${categories[cat].words.length} slov)`;
+    categorySelect.appendChild(opt);
+  });
+
+  // Funkce na vykreslení slov podle vybrané kategorie
+  function renderTable(category) {
+    tbody.innerHTML = '';
+    const words = categories[category]?.words || [];
+    words.forEach(entry => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="cs">${entry.cs || ''}</td>
+        <td class="zh_simp">${entry.zh_simp || ''}</td>
+        <td class="zh_pinyin">${entry.zh_pinyin || ''}</td>
+        <td class="zh_cantonese">${entry.zh_cantonese || ''}</td>
+        <td class="sr_cyr">${entry.sr_cyr || ''}</td>
+        <td class="sr_lat">${entry.sr_lat || ''}</td>
+        <td class="hu">${entry.hu || ''}</td>
+        <td class="es">${entry.es || ''}</td>
+        <td class="la">${entry.la || ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    updateVisibility();
+  }
+
+  // Funkce na update viditelnosti sloupců dle checkboxů
+  function updateVisibility() {
+    const enabledLangs = Array.from(checkboxes)
+      .filter(cb => cb.checked)
+      .map(cb => cb.getAttribute('data-lang'));
+
+    // Hlavičky
+    headers.forEach(th => {
+      const lang = th.getAttribute('data-lang');
+      th.style.display = enabledLangs.includes(lang) ? '' : 'none';
+    });
+
+    // Buňky
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+      Array.from(row.children).forEach(td => {
+        td.style.display = enabledLangs.includes(td.className) ? '' : 'none';
+      });
+    });
+  }
+
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+  });
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', updateVisibility);
+  });
+
+  categorySelect.addEventListener('change', e => {
+    renderTable(e.target.value);
+  });
+
+  // Výchozí načtení první kategorie
+  categorySelect.selectedIndex = 0;
+  renderTable(categorySelect.value);
+</script>
+
+</body>
+</html>
